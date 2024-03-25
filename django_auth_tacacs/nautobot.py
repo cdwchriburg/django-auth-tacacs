@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 # TACACSPLUS_SESSION_TIMEOUT = 5
 # TACACSPLUS_AUTH_PROTOCOL = 'pap'
 # TACACSPLUS_AUTOCREATE_USERS = True
+# TACACSPLUS_AUTOCREATE_SUPERUSER = False
+# TACACSPLUS_AUTOCREATE_STAFF = False
 #
 # AUTHENTICATION_BACKENDS = [
 #     'django_auth_tacacs.nautobot.TACACSPlusAuthenticationBackend',
@@ -33,11 +35,11 @@ class TACACSPlusAuthenticationBackend(ModelBackend):
     Authorization is not implemented, only login authentication
     """
 
-    def _get_or_set_user(self, username, password, create_user=False):
+    def _get_or_set_user(self, username, password, create_user=False, create_superuser=False, create_staff=False):
         if create_user:
             user, created = User.objects.get_or_create(
                 username=username,
-                defaults={"is_superuser": False, "is_staff": False},
+                defaults={"is_superuser": create_superuser, "is_staff": create_staff},
             )
             if created:
                 logger.debug("Created TACACS+ user %s" % (username,))
@@ -69,7 +71,7 @@ class TACACSPlusAuthenticationBackend(ModelBackend):
             return None
         if auth.valid:
             return self._get_or_set_user(
-                username, password, settings.TACACSPLUS_AUTOCREATE_USERS
+                username, password, settings.TACACSPLUS_AUTOCREATE_USERS, settings.TACACSPLUS_AUTOCREATE_SUPERUSER, settings.TACACSPLUS_AUTOCREATE_STAFF
             )
 
     def get_user(self, user_id):
